@@ -38,12 +38,12 @@ const upload = multer({
 }).array('images', 10);
 
 router.post('/', (req, res, next) => {
-	upload(req, res, function (error) {
+	upload(req, res, function (err) {
 		console.log('files', req.files);
 
-		if (error) {
-			console.log('error', error);
-			res.json({ error });
+		if (err) {
+			console.log('error', err);
+			res.json({ error: err.message });
 		} else if (req.files.length === 0) {
 			console.log('Error: No File Selected!');
 			res.json({ error: 'No File Selected' });
