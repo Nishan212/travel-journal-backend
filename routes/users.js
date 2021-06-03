@@ -43,9 +43,9 @@ router.post('/register', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
 	passport.authenticate('local', (err, user, info) => {
 		try {
-			if (err) {
+			if (err || !user) {
 				return res.status(400).json({
-					error: err.message,
+					error: err !== null ? err.message : 'Body empty',
 				});
 			}
 
