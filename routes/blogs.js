@@ -23,6 +23,27 @@ router.get('/', async (req, res, next) => {
     }
 });
 
+router.get('/private', verifyUser, async (req, res, next) => {
+    const { email } = req.user;
+    console.log(email);
+
+    try {
+        const blogs = await Blog.find({}).populate({
+            path: 'user',
+            select: '-password',
+        });
+
+        const result = blogs.filter((blog) => blog.user.email === email);
+
+        return res.status(200).json(result);
+    } catch (err) {
+        console.log(err.message);
+        res.status(200).json({
+            error: err.message,
+        });
+    }
+});
+
 router.post('/', async (req, res, next) => {
     const { public, title, body, images, location } = req.body;
 
