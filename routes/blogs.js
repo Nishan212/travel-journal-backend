@@ -8,124 +8,131 @@ const { verifyUser } = require('../config/authenticate');
 const router = express.Router();
 
 router.get('/', async (req, res, next) => {
-	try {
-		const blogs = await Blog.find({ public: true }).populate({
-			path: 'user',
-			select: '-password',
-		});
+    try {
+        const blogs = await Blog.find({ public: true }).populate({
+            path: 'user',
+            select: '-password',
+        });
 
-		return res.status(200).json(blogs);
-	} catch (err) {
-		console.log(err.message);
-		res.status(404).json({
-			error: err.message,
-		});
-	}
+        return res.status(200).json(blogs);
+    } catch (err) {
+        console.log(err.message);
+        res.status(200).json({
+            error: err.message,
+        });
+    }
 });
 
 router.post('/', async (req, res, next) => {
-	const { public, title, body, images, location } = req.body;
+    const { public, title, body, images, location } = req.body;
 
-	const short = body.length < 51 ? body : body.slice(0, 50) + '...';
+    const short = body.length < 51 ? body : body.slice(0, 50) + '...';
 
-	try {
-		const user = await User.findOne({
-			email: 'dalmeida@gmail.com',
-		}).select('-password');
-		if (!user)
-			return res.status(400).json({
-				error: 'User does not exist',
-			});
+    try {
+        const user = await User.findOne({
+            email: 'dalmeida@gmail.com',
+        }).select('-password');
+        if (!user)
+            return res.status(400).json({
+                error: 'User does not exist',
+            });
 
-		const blog = new Blog({
-			public,
-			title,
-			body,
-			short,
-			images,
-			location,
-			user,
-		});
+        const blog = new Blog({
+            public,
+            title,
+            body,
+            short,
+            images,
+            location,
+            user,
+        });
 
-		await blog.save();
+        await blog.save();
 
-		return res.status(200).json({
-			success: true,
-			blog,
-		});
-	} catch (err) {
-		console.log(err.message);
-		res.status(404).json({
-			error: err.message,
-		});
-	}
+        return res.status(200).json({
+            success: true,
+            blog,
+        });
+    } catch (err) {
+        console.log(err.message);
+        res.status(404).json({
+            error: err.message,
+        });
+    }
 });
 
-// TODO: get the blog only if public or the user is the author of it
 router.get('/:id', validateObjectId, async (req, res, next) => {
-	const { id } = req.params;
+    const { id } = req.params;
 
-	try {
-		const blog = await Blog.findOne({
-			_id: id,
-		});
-		return res.status(200).json(blog);
-	} catch (err) {
-		console.log(err.message);
-		res.status(404).json({
-			error: err.message,
-		});
-	}
+    try {
+        const blog = await Blog.findOne({
+            _id: id,
+        }).populate({ path: 'user', select: '-password' });
+
+        if (!blog || blog.public) return res.status(200).json(blog);
+
+        req.blog = blog;
+        return next();
+    } catch (err) {
+        console.log(err.message);
+        res.status(404).json({
+            error: err.message,
+        });
+    }
+});
+
+router.get('/:id', validateObjectId, verifyUser, async (req, res, next) => {
+    return res.status(200).json(req.blog);
 });
 
 router.put('/:id', validateObjectId, async (req, res, next) => {
-	const { id } = req.params;
-	const { public, title, body, images, location } = req.body;
-	console.log(public, req.body.public);
+    const { id } = req.params;
+    const { public, title, body, images, location } = req.body;
+    console.log(public, req.body.public);
 
-	const short = body
-		? body.length < 51
-			? body
-			: body.slice(0, 50) + '...'
-		: undefined;
+    const short = body
+        ? body.length < 51
+            ? body
+            : body.slice(0, 50) + '...'
+        : undefined;
 
-	try {
-		const user = await User.findOne({
-			email: 'dalmeida@gmail.com',
-		}).select('-password');
-		if (!user)
-			return res.status(400).json({
-				error: 'User does not exist',
-			});
+    try {
+        const user = await User.findOne({
+            email: 'dalmeida@gmail.com',
+        }).select('-password');
+        if (!user)
+            return res.status(400).json({
+                error: 'User does not exist',
+            });
 
-		const blog = await Blog.findByIdAndUpdate(
-			{
-				_id: id,
-			},
-			{
-				public,
-				title,
-				body,
-				short,
-				images,
-				location,
-			},
-			{
-				new: true,
-			}
-		);
-		if (!blog)
-			return res.status(400).json({
-				error: 'Blog does not exist',
-			});
+        const blog = await Blog.findByIdAndUpdate(
+            {
+                _id: id,
+            },
+            {
+                public,
+                title,
+                body,
+                short,
+                images,
+                location,
+            },
+            {
+                new: true,
+            }
+        );
+        if (!blog)
+            return res.status(400).json({
+                error: 'Blog does not exist',
+            });
 
-		return res.status(200).json(blog);
-	} catch (err) {
-		console.log(err.message);
-		res.status(404).json({
-			error: err.message,
-		});
-	}
+        return res.status(200).json(blog);
+    } catch (err) {
+        console.log(err.message);
+        res.status(404).json({
+            error: err.message,
+        });
+    }
 });
 
 module.exports = router;
