@@ -44,17 +44,18 @@ router.get('/private', verifyUser, async (req, res, next) => {
     }
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/', verifyUser, async (req, res, next) => {
     const { public, title, body, images, location } = req.body;
+    const { email } = req.user;
 
     const short = body.length < 51 ? body : body.slice(0, 50) + '...';
 
     try {
         const user = await User.findOne({
-            email: 'dalmeida@gmail.com',
+            email,
         }).select('-password');
         if (!user)
-            return res.status(400).json({
+            return res.status(200).json({
                 error: 'User does not exist',
             });
 
@@ -72,11 +73,11 @@ router.post('/', async (req, res, next) => {
 
         return res.status(200).json({
             success: true,
-            blog,
+            message: 'Blog Created',
         });
     } catch (err) {
         console.log(err.message);
-        res.status(404).json({
+        res.status(200).json({
             error: err.message,
         });
     }
