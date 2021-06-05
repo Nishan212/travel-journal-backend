@@ -45,7 +45,7 @@ router.post('/', (req, res, next) => {
 
         if (err) {
             console.log('error', err);
-            res.json({ error: err.message });
+            res.json({ error: err });
         } else if (req.files.length === 0) {
             console.log('Error: No File Selected!');
             res.json({ error: 'No File Selected' });
